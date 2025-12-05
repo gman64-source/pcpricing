@@ -1,604 +1,667 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#2563eb">
-<title>PC Builder</title>
-<!-- Load Tailwind CSS -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- Load Phosphor Icons for app-like icons -->
-<script src="https://unpkg.com/@phosphor-icons/web"></script>
-<style>
-/* App-like font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <title>PC Configurator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',      /* Slate 900 */
+                            card: '#1e293b',    /* Slate 800 */
+                            input: '#334155',   /* Slate 700 */
+                            border: '#475569',  /* Slate 600 */
+                        },
+                        brand: {
+                            500: '#06b6d4',     /* Cyan 500 */
+                            600: '#0891b2',     /* Cyan 600 */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
 
-body {
-font-family: 'Inter', sans-serif;
--webkit-tap-highlight-color: transparent;
-padding-bottom: 120px; /* Space for sticky footer */
-}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 140px; /* Space for bottom bar */
+        }
 
-/* Hide scrollbar for clean UI in modal */
-.no-scrollbar::-webkit-scrollbar {
-display: none;
-}
-.no-scrollbar {
--ms-overflow-style: none;
-scrollbar-width: none;
-}
+        /* Input styling adjustments */
+        input {
+            color-scheme: dark; 
+        }
+        
+        /* Accordion Animations */
+        .accordion-content {
+            transition: all 0.3s ease-in-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .accordion-content.open {
+            max-height: 2000px;
+            opacity: 1;
+        }
+        .chevron {
+            transition: transform 0.3s;
+        }
+        .accordion-btn[aria-expanded="true"] .chevron {
+            transform: rotate(180deg);
+        }
+        .accordion-btn[aria-expanded="true"] {
+            border-bottom-color: #334155; 
+        }
 
-/* Smooth accordion transition */
-.accordion-content {
-transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
-max-height: 0;
-opacity: 0;
-overflow: hidden;
-}
-.accordion-content.open {
-max-height: 2000px; /* Arbitrary large number */
-opacity: 1;
-}
-
-/* Chevron rotation */
-.chevron {
-transition: transform 0.3s;
-}
-.accordion-btn[aria-expanded="true"] .chevron {
-transform: rotate(180deg);
-}
-
-/* iOS Input fix */
-input {
-font-size: 16px !important; /* Prevents zoom on focus */
-}
-</style>
+        /* Glassmorphism utils */
+        .glass {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
-
-<!-- App Header -->
-<header class="bg-blue-600 text-white p-4 sticky top-0 z-40 shadow-md pt-safe-top">
-<div class="flex justify-between items-center max-w-3xl mx-auto">
-<h1 class="text-xl font-bold flex items-center gap-2">
-<i class="ph ph-desktop text-2xl"></i> PC Builder
-</h1>
-<button id="reset-app-btn" class="text-blue-100 hover:text-white">
-<i class="ph ph-arrow-counter-clockwise text-2xl"></i>
-</button>
-</div>
-</header>
-
-<!-- Main Content -->
-<main class="p-4 max-w-3xl mx-auto space-y-4">
-
-<!-- Section: Core Components -->
-<div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-<button class="accordion-btn w-full p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition" aria-expanded="true" onclick="toggleAccordion('core-section')">
-<span class="font-semibold text-gray-700 flex items-center gap-2">
-<i class="ph ph-cpu text-blue-600 text-lg"></i> Core Components
-</span>
-<i class="ph ph-caret-down text-gray-400 chevron"></i>
-</button>
-<div id="core-section" class="accordion-content open bg-white p-4 space-y-4">
-<!-- Items injected by JS -->
-<div id="core-inputs-container" class="space-y-4"></div>
-</div>
-</div>
-
-<!-- Section: Optional Components -->
-<div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-<button class="accordion-btn w-full p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition" aria-expanded="false" onclick="toggleAccordion('optional-section')">
-<span class="font-semibold text-gray-700 flex items-center gap-2">
-<i class="ph ph-wifi-high text-purple-600 text-lg"></i> Optional
-</span>
-<i class="ph ph-caret-down text-gray-400 chevron"></i>
-</button>
-<div id="optional-section" class="accordion-content bg-white p-4 space-y-4">
-<div id="optional-inputs-container" class="space-y-4"></div>
-</div>
-</div>
-
-<!-- Section: Multi-Item Components -->
-<div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-<button class="accordion-btn w-full p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition" aria-expanded="true" onclick="toggleAccordion('multi-section')">
-<span class="font-semibold text-gray-700 flex items-center gap-2">
-<i class="ph ph-plus-square text-green-600 text-lg"></i> Expandable Parts
-</span>
-<i class="ph ph-caret-down text-gray-400 chevron"></i>
-</button>
-<div id="multi-section" class="accordion-content open bg-white p-4 space-y-6">
-<!-- GPU -->
-<div class="space-y-3">
-<div class="flex justify-between items-center">
-<label class="text-sm font-bold text-gray-600">Graphics Cards (GPU)</label>
-<button onclick="addMultiItem('gpu')" class="text-blue-600 text-sm font-medium flex items-center gap-1">
-<i class="ph ph-plus-circle"></i> Add
-</button>
-</div>
-<div id="gpu-list" class="space-y-3"></div>
-</div>
-<hr class="border-gray-100">
-<!-- RAM -->
-<div class="space-y-3">
-<div class="flex justify-between items-center">
-<label class="text-sm font-bold text-gray-600">Memory (RAM)</label>
-<button onclick="addMultiItem('ram')" class="text-blue-600 text-sm font-medium flex items-center gap-1">
-<i class="ph ph-plus-circle"></i> Add
-</button>
-</div>
-<div id="ram-list" class="space-y-3"></div>
-</div>
-<hr class="border-gray-100">
-<!-- SSD -->
-<div class="space-y-3">
-<div class="flex justify-between items-center">
-<label class="text-sm font-bold text-gray-600">Storage</label>
-<button onclick="addMultiItem('ssd')" class="text-blue-600 text-sm font-medium flex items-center gap-1">
-<i class="ph ph-plus-circle"></i> Add
-</button>
-</div>
-<div id="ssd-list" class="space-y-3"></div>
-</div>
-</div>
-</div>
-
-<!-- Section: Extras -->
-<div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-<button class="accordion-btn w-full p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition" aria-expanded="false" onclick="toggleAccordion('extras-section')">
-<span class="font-semibold text-gray-700 flex items-center gap-2">
-<i class="ph ph-fan text-orange-600 text-lg"></i> Fans & Extras
-</span>
-<i class="ph ph-caret-down text-gray-400 chevron"></i>
-</button>
-<div id="extras-section" class="accordion-content bg-white p-4 space-y-6">
-<!-- Fans -->
-<div class="space-y-3">
-<div class="flex justify-between items-center">
-<label class="text-sm font-bold text-gray-600">Fans</label>
-<button onclick="addMultiItem('fans')" class="text-blue-600 text-sm font-medium flex items-center gap-1">
-<i class="ph ph-plus-circle"></i> Add
-</button>
-</div>
-<div id="fans-list" class="space-y-3"></div>
-</div>
-<!-- Cables -->
-<div class="space-y-3">
-<div class="flex justify-between items-center">
-<label class="text-sm font-bold text-gray-600">Cables</label>
-<button onclick="addMultiItem('cables')" class="text-blue-600 text-sm font-medium flex items-center gap-1">
-<i class="ph ph-plus-circle"></i> Add
-</button>
-</div>
-<div id="cables-list" class="space-y-3"></div>
-</div>
-<!-- Other -->
-<div class="space-y-3">
-<div class="flex justify-between items-center">
-<label class="text-sm font-bold text-gray-600">Other</label>
-<button onclick="addMultiItem('other')" class="text-blue-600 text-sm font-medium flex items-center gap-1">
-<i class="ph ph-plus-circle"></i> Add
-</button>
-</div>
-<div id="other-list" class="space-y-3"></div>
-</div>
-</div>
-</div>
-
-</main>
-
-<!-- Sticky Bottom Bar -->
-<div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 z-50 pb-safe-bottom">
-<div class="max-w-3xl mx-auto flex justify-between items-center">
-<div>
-<p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Est.</p>
-<p id="bar-total" class="text-xl font-bold text-blue-600">$0.00</p>
-</div>
-<button onclick="openSummary()" class="bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:bg-gray-800 transition transform active:scale-95 flex items-center gap-2">
-Review & Save <i class="ph ph-caret-up"></i>
-</button>
-</div>
-</div>
-
-<!-- Summary Modal Overlay -->
-<div id="summary-modal" class="fixed inset-0 bg-black/50 z-[60] hidden backdrop-blur-sm opacity-0 transition-opacity duration-300">
-<!-- Modal Content -->
-<div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto transform translate-y-full transition-transform duration-300 ease-out" id="modal-panel">
-
-<div class="sticky top-0 bg-white border-b border-gray-100 p-4 flex justify-between items-center z-10">
-<h2 class="text-xl font-bold text-gray-800">Review Build</h2>
-<button onclick="closeSummary()" class="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition">
-<i class="ph ph-x text-xl"></i>
-</button>
-</div>
-
-<div class="p-6 space-y-6 pb-20">
-<!-- Financials -->
-<div class="bg-gray-50 p-4 rounded-xl space-y-2 border border-gray-100">
-<div class="flex justify-between text-gray-600">
-<span>Subtotal (Parts)</span>
-<span id="modal-subtotal" class="font-medium">$0.00</span>
-</div>
-<div class="flex justify-between items-center pt-2">
-<span class="text-gray-600">Profit Margin</span>
-<div class="flex items-center gap-2 bg-white px-2 py-1 rounded border border-gray-200">
-<input type="number" id="profit-margin-input" value="15" class="w-12 text-right outline-none text-gray-800 font-medium" oninput="handleProfitInput(event)">
-<span class="text-gray-500 text-sm">%</span>
-</div>
-</div>
-<div class="flex justify-between text-green-600 pt-1">
-<span>Profit</span>
-<span id="modal-profit" class="font-medium">+$0.00</span>
-</div>
-<div class="border-t border-gray-200 pt-2 mt-2 flex justify-between items-center">
-<span class="font-bold text-gray-800 text-lg">Grand Total</span>
-<span id="modal-total" class="font-bold text-blue-600 text-2xl">$0.00</span>
-</div>
-</div>
-
-<!-- Save / Load Section -->
-<div>
-<h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Save Configuration</h3>
-<div class="space-y-3">
-<input type="text" id="build-name" placeholder="Build Name (e.g. Gamer Rig)" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-
-<div class="grid grid-cols-2 gap-3">
-<button onclick="handleSave()" class="bg-blue-600 text-white p-3 rounded-xl font-medium hover:bg-blue-700 active:bg-blue-800 transition">
-Save Build
-</button>
-<button onclick="handleDelete()" class="bg-red-100 text-red-600 p-3 rounded-xl font-medium hover:bg-red-200 transition">
-Delete
-</button>
-</div>
-<p id="save-msg" class="text-center text-sm min-h-[20px]"></p>
-</div>
-</div>
-
-<!-- Load List -->
-<div>
-<h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Load Saved Build</h3>
-<div class="flex gap-2">
-<select id="saved-builds-select" class="flex-1 p-3 border border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-<option value="">Select a build...</option>
-</select>
-<button onclick="handleLoad()" class="bg-gray-800 text-white px-4 rounded-xl font-medium">
-Load
-</button>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-<script>
-// --- CONFIG ---
-const CORE_PARTS = [
-{ id: 'cpu', label: 'CPU', icon: 'cpu' },
-{ id: 'motherboard', label: 'Motherboard', icon: 'circuitry' },
-{ id: 'psu', label: 'Power Supply', icon: 'plug' },
-{ id: 'cooler', label: 'Cooler', icon: 'snowflake' },
-{ id: 'case', label: 'Case', icon: 'desktop' },
-{ id: 'os', label: 'OS', icon: 'windows-logo' }
-];
-
-const OPTIONAL_PARTS = [
-{ id: 'rgb', label: 'RGB Controller', icon: 'lightbulb' },
-{ id: 'wifi', label: 'WiFi Adapter', icon: 'wifi-high' }
-];
-
-// --- STATE ---
-const STORAGE_PREFIX = 'pc_builder_v2_';
-const initialState = {
-singleParts: {
-cpu: { name: '', price: 0 },
-motherboard: { name: '', price: 0 },
-psu: { name: '', price: 0 },
-cooler: { name: '', price: 0 },
-case: { name: '', price: 0 },
-os: { name: '', price: 0 },
-rgb: { name: '', price: 0 },
-wifi: { name: '', price: 0 }
-},
-multiParts: {
-gpu: [{ name: '', price: 0 }],
-ram: [{ name: '', price: 0 }],
-ssd: [{ name: '', price: 0 }],
-fans: [],
-cables: [],
-other: []
-},
-profitMargin: 15
-};
-
-let state = JSON.parse(JSON.stringify(initialState));
-
-// --- DOM GENERATION ---
-
-function renderSingleInputs() {
-// Render Core
-const coreContainer = document.getElementById('core-inputs-container');
-coreContainer.innerHTML = CORE_PARTS.map(part => createSingleInputHTML(part)).join('');
-
-// Render Optional
-const optionalContainer = document.getElementById('optional-inputs-container');
-optionalContainer.innerHTML = OPTIONAL_PARTS.map(part => createSingleInputHTML(part)).join('');
-}
-
-function createSingleInputHTML(part) {
-return `
-<div class="space-y-1">
-<label class="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">${part.label}</label>
-<div class="flex shadow-sm rounded-lg overflow-hidden border border-gray-200">
-<input type="text"
-placeholder="${part.label} Name"
-data-category="single"
-data-part="${part.id}"
-data-field="name"
-class="w-2/3 p-3 bg-white outline-none text-gray-800 placeholder-gray-400"
-oninput="handleInput(event)"
->
-<div class="w-px bg-gray-200"></div>
-<input type="number"
-inputmode="decimal"
-placeholder="0.00"
-data-category="single"
-data-part="${part.id}"
-data-field="price"
-class="w-1/3 p-3 bg-gray-50 outline-none text-right font-medium text-gray-700 placeholder-gray-400"
-oninput="handleInput(event)"
->
-</div>
-</div>
-`;
-}
-
-function createMultiItemHTML(category, item, index) {
-return `
-<div class="flex gap-2 items-center multi-item animate-fade-in" data-category="${category}" data-index="${index}">
-<div class="flex-1 flex shadow-sm rounded-lg overflow-hidden border border-gray-200">
-<input type="text"
-value="${item.name}"
-placeholder="Item Name"
-class="w-2/3 p-3 bg-white outline-none text-sm text-gray-800"
-oninput="handleMultiInput(this, 'name')"
->
-<div class="w-px bg-gray-200"></div>
-<input type="number"
-inputmode="decimal"
-value="${item.price || ''}"
-placeholder="0.00"
-class="w-1/3 p-3 bg-gray-50 outline-none text-right text-sm font-medium text-gray-700"
-oninput="handleMultiInput(this, 'price')"
->
-</div>
-<button onclick="removeMultiItem('${category}', ${index})" class="bg-red-100 text-red-500 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-red-200 transition">
-<i class="ph ph-trash text-lg"></i>
-</button>
-</div>
-`;
-}
-
-// --- RENDER LOGIC ---
-
-function renderMultiList(category) {
-const container = document.getElementById(`${category}-list`);
-const list = state.multiParts[category];
-
-if (list.length === 0) {
-container.innerHTML = `<p class="text-xs text-gray-400 italic py-1">No items added</p>`;
-} else {
-container.innerHTML = list.map((item, index) => createMultiItemHTML(category, item, index)).join('');
-}
-}
-
-function populateForm() {
-// Populate Single Inputs
-document.querySelectorAll('input[data-category="single"]').forEach(input => {
-const part = input.dataset.part;
-const field = input.dataset.field;
-if (state.singleParts[part]) {
-input.value = state.singleParts[part][field] === 0 && field === 'price' ? '' : state.singleParts[part][field];
-}
-});
-
-// Populate Multi Inputs
-Object.keys(state.multiParts).forEach(cat => renderMultiList(cat));
-
-// Populate Profit
-document.getElementById('profit-margin-input').value = state.profitMargin;
-
-calculate();
-}
-
-// --- LOGIC ---
-
-function handleInput(e) {
-const target = e.target;
-const part = target.dataset.part;
-const field = target.dataset.field;
-
-let val = target.value;
-if (field === 'price') val = parseFloat(val) || 0;
-
-state.singleParts[part][field] = val;
-calculate();
-}
-
-function handleMultiInput(el, field) {
-const container = el.closest('.multi-item');
-const category = container.dataset.category;
-const index = parseInt(container.dataset.index);
-
-let val = el.value;
-if (field === 'price') val = parseFloat(val) || 0;
-
-state.multiParts[category][index][field] = val;
-calculate();
-}
-
-function addMultiItem(category) {
-state.multiParts[category].push({ name: '', price: 0 });
-renderMultiList(category);
-calculate();
-}
-
-function removeMultiItem(category, index) {
-state.multiParts[category].splice(index, 1);
-renderMultiList(category);
-calculate();
-}
-
-function handleProfitInput(e) {
-state.profitMargin = parseFloat(e.target.value) || 0;
-calculate();
-}
-
-function calculate() {
-let subtotal = 0;
-
-// Single
-Object.values(state.singleParts).forEach(p => subtotal += p.price);
-// Multi
-Object.values(state.multiParts).forEach(list => list.forEach(i => subtotal += i.price));
-
-const profit = subtotal * (state.profitMargin / 100);
-const total = subtotal + profit;
-
-const fmt = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-
-// Update UI
-document.getElementById('bar-total').textContent = fmt(total);
-document.getElementById('modal-subtotal').textContent = fmt(subtotal);
-document.getElementById('modal-profit').textContent = `+${fmt(profit)}`;
-document.getElementById('modal-total').textContent = fmt(total);
-}
-
-// --- UI INTERACTION ---
-
-function toggleAccordion(id) {
-const content = document.getElementById(id);
-const btn = content.previousElementSibling;
-const isOpen = content.classList.contains('open');
-
-if (isOpen) {
-content.classList.remove('open');
-btn.setAttribute('aria-expanded', 'false');
-} else {
-content.classList.add('open');
-btn.setAttribute('aria-expanded', 'true');
-}
-}
-
-function openSummary() {
-const modal = document.getElementById('summary-modal');
-const panel = document.getElementById('modal-panel');
-
-modal.classList.remove('hidden');
-// Small timeout to allow display:block to apply before opacity transition
-setTimeout(() => {
-modal.classList.remove('opacity-0');
-panel.classList.remove('translate-y-full');
-}, 10);
-
-populateLoadSelect(); // Refresh saved list
-}
-
-function closeSummary() {
-const modal = document.getElementById('summary-modal');
-const panel = document.getElementById('modal-panel');
-
-modal.classList.add('opacity-0');
-panel.classList.add('translate-y-full');
-
-setTimeout(() => {
-modal.classList.add('hidden');
-}, 300);
-}
-
-// --- STORAGE ---
-
-function showMsg(txt, isErr) {
-const el = document.getElementById('save-msg');
-el.textContent = txt;
-el.className = `text-center text-sm min-h-[20px] ${isErr ? 'text-red-500' : 'text-green-600'}`;
-setTimeout(() => el.textContent = '', 3000);
-}
-
-function populateLoadSelect() {
-const sel = document.getElementById('saved-builds-select');
-sel.innerHTML = '<option value="">Select a build...</option>';
-for (let i = 0; i < localStorage.length; i++) {
-const key = localStorage.key(i);
-if (key.startsWith(STORAGE_PREFIX)) {
-const name = key.replace(STORAGE_PREFIX, '');
-const opt = document.createElement('option');
-opt.value = name;
-opt.textContent = name;
-sel.appendChild(opt);
-}
-}
-}
-
-function handleSave() {
-const name = document.getElementById('build-name').value.trim();
-if (!name) return showMsg('Enter a name', true);
-
-try {
-localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(state));
-populateLoadSelect();
-showMsg('Saved!', false);
-} catch(e) {
-showMsg('Storage full', true);
-}
-}
-
-function handleLoad() {
-const name = document.getElementById('saved-builds-select').value;
-const nameInput = document.getElementById('build-name');
-if (!name) return showMsg('Select a build', true);
-
-const data = localStorage.getItem(STORAGE_PREFIX + name);
-if (data) {
-state = JSON.parse(data);
-// Merge simply to ensure structure
-state = { ...initialState, ...state };
-state.singleParts = { ...initialState.singleParts, ...state.singleParts };
-state.multiParts = { ...initialState.multiParts, ...state.multiParts };
-
-nameInput.value = name;
-populateForm();
-closeSummary();
-}
-}
-
-function handleDelete() {
-const name = document.getElementById('build-name').value.trim();
-if (!name) return showMsg('Enter name to delete', true);
-if (localStorage.getItem(STORAGE_PREFIX + name)) {
-localStorage.removeItem(STORAGE_PREFIX + name);
-populateLoadSelect();
-document.getElementById('build-name').value = '';
-showMsg('Deleted', false);
-} else {
-showMsg('Not found', true);
-}
-}
-
-// --- INIT ---
-document.getElementById('reset-app-btn').addEventListener('click', () => {
-if(confirm('Reset all fields?')) {
-state = JSON.parse(JSON.stringify(initialState));
-populateForm();
-}
-});
-
-// Initialize
-renderSingleInputs();
-populateForm(); // Sets initial zeros
-
-</script>
+<body class="antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="glass fixed top-0 left-0 right-0 z-40 pt-safe-top">
+        <div class="max-w-3xl mx-auto px-5 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-blue-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
+                    <i class="ph-bold ph-cpu text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight">PC Configurator</h1>
+                    <p class="text-xs text-slate-400 font-medium">Build & Price</p>
+                </div>
+            </div>
+            <button id="reset-app-btn" class="w-10 h-10 rounded-full bg-dark-card hover:bg-dark-input flex items-center justify-center text-slate-400 hover:text-white transition border border-dark-border">
+                <i class="ph-bold ph-arrow-counter-clockwise"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Spacer for fixed header -->
+    <div class="h-24"></div>
+
+    <!-- Main Content -->
+    <main class="px-4 max-w-3xl mx-auto space-y-5">
+
+        <!-- Core Components Section -->
+        <section class="bg-dark-card rounded-2xl border border-dark-border overflow-hidden shadow-xl shadow-black/20">
+            <button class="accordion-btn w-full p-5 flex justify-between items-center bg-dark-card active:bg-dark-input transition-colors group" aria-expanded="true" onclick="toggleAccordion('core-section')">
+                <div class="flex items-center gap-3">
+                    <i class="ph-fill ph-circuitry text-brand-500 text-xl"></i>
+                    <span class="font-semibold text-slate-200 text-lg">Core Components</span>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-dark-bg flex items-center justify-center group-hover:bg-dark-input transition">
+                    <i class="ph-bold ph-caret-down text-slate-400 chevron"></i>
+                </div>
+            </button>
+            <div id="core-section" class="accordion-content open border-t border-dark-border bg-dark-bg/30">
+                <div id="core-inputs-container" class="p-5 space-y-5">
+                    <!-- JS Injects Inputs Here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Multi-Item Section -->
+        <section class="bg-dark-card rounded-2xl border border-dark-border overflow-hidden shadow-xl shadow-black/20">
+            <button class="accordion-btn w-full p-5 flex justify-between items-center bg-dark-card active:bg-dark-input transition-colors group" aria-expanded="true" onclick="toggleAccordion('multi-section')">
+                <div class="flex items-center gap-3">
+                    <i class="ph-fill ph-stack text-purple-500 text-xl"></i>
+                    <span class="font-semibold text-slate-200 text-lg">Expansion & Storage</span>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-dark-bg flex items-center justify-center group-hover:bg-dark-input transition">
+                    <i class="ph-bold ph-caret-down text-slate-400 chevron"></i>
+                </div>
+            </button>
+            <div id="multi-section" class="accordion-content open border-t border-dark-border bg-dark-bg/30">
+                <div class="p-5 space-y-8">
+                    
+                    <!-- GPU Group -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-end">
+                            <label class="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                <i class="ph-bold ph-graphics-card"></i> GPU
+                            </label>
+                            <button onclick="addMultiItem('gpu')" class="text-xs bg-brand-600/20 text-brand-500 hover:bg-brand-600/30 px-3 py-1.5 rounded-full font-semibold transition flex items-center gap-1">
+                                <i class="ph-bold ph-plus"></i> Add
+                            </button>
+                        </div>
+                        <div id="gpu-list" class="space-y-3"></div>
+                    </div>
+
+                    <!-- RAM Group -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-end">
+                            <label class="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                <i class="ph-bold ph-memory"></i> RAM
+                            </label>
+                            <button onclick="addMultiItem('ram')" class="text-xs bg-brand-600/20 text-brand-500 hover:bg-brand-600/30 px-3 py-1.5 rounded-full font-semibold transition flex items-center gap-1">
+                                <i class="ph-bold ph-plus"></i> Add
+                            </button>
+                        </div>
+                        <div id="ram-list" class="space-y-3"></div>
+                    </div>
+
+                    <!-- Storage Group -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-end">
+                            <label class="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                <i class="ph-bold ph-hard-drive"></i> Storage
+                            </label>
+                            <button onclick="addMultiItem('ssd')" class="text-xs bg-brand-600/20 text-brand-500 hover:bg-brand-600/30 px-3 py-1.5 rounded-full font-semibold transition flex items-center gap-1">
+                                <i class="ph-bold ph-plus"></i> Add
+                            </button>
+                        </div>
+                        <div id="ssd-list" class="space-y-3"></div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Optional & Extras -->
+        <section class="bg-dark-card rounded-2xl border border-dark-border overflow-hidden shadow-xl shadow-black/20">
+             <button class="accordion-btn w-full p-5 flex justify-between items-center bg-dark-card active:bg-dark-input transition-colors group" aria-expanded="false" onclick="toggleAccordion('extras-section')">
+                <div class="flex items-center gap-3">
+                    <i class="ph-fill ph-sliders-horizontal text-emerald-500 text-xl"></i>
+                    <span class="font-semibold text-slate-200 text-lg">Cooling & Extras</span>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-dark-bg flex items-center justify-center group-hover:bg-dark-input transition">
+                    <i class="ph-bold ph-caret-down text-slate-400 chevron"></i>
+                </div>
+            </button>
+            <div id="extras-section" class="accordion-content border-t border-dark-border bg-dark-bg/30">
+                <div class="p-5 space-y-6">
+                    
+                    <!-- Single Optionals -->
+                    <div id="optional-inputs-container" class="space-y-4"></div>
+                    
+                    <hr class="border-dark-border opacity-50">
+
+                    <!-- Multi Extras -->
+                    <div class="space-y-6">
+                        <!-- Fans -->
+                        <div class="space-y-2">
+                             <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-slate-500 uppercase">Fans</label>
+                                <button onclick="addMultiItem('fans')" class="text-brand-500 hover:text-brand-400 text-xl"><i class="ph-bold ph-plus-circle"></i></button>
+                            </div>
+                            <div id="fans-list" class="space-y-3"></div>
+                        </div>
+                        <!-- Cables -->
+                        <div class="space-y-2">
+                             <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-slate-500 uppercase">Cables</label>
+                                <button onclick="addMultiItem('cables')" class="text-brand-500 hover:text-brand-400 text-xl"><i class="ph-bold ph-plus-circle"></i></button>
+                            </div>
+                            <div id="cables-list" class="space-y-3"></div>
+                        </div>
+                         <!-- Other -->
+                         <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                               <label class="text-xs font-bold text-slate-500 uppercase">Other</label>
+                               <button onclick="addMultiItem('other')" class="text-brand-500 hover:text-brand-400 text-xl"><i class="ph-bold ph-plus-circle"></i></button>
+                           </div>
+                           <div id="other-list" class="space-y-3"></div>
+                       </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Action Bar -->
+    <div class="glass fixed bottom-0 left-0 right-0 p-4 pb-safe-bottom z-50">
+        <div class="max-w-3xl mx-auto flex gap-4 items-center justify-between">
+            <div class="flex flex-col">
+                <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Estimated Total</span>
+                <span id="bar-total" class="text-2xl font-bold text-brand-500 font-mono tracking-tight">$0.00</span>
+            </div>
+            <button onclick="openSummary()" class="flex-1 bg-white text-slate-900 hover:bg-slate-200 active:scale-95 transition rounded-xl py-3 px-6 font-bold shadow-lg shadow-white/5 flex items-center justify-center gap-2">
+                <span>Review</span>
+                <i class="ph-bold ph-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="summary-modal" class="fixed inset-0 z-[60] hidden transition-all duration-300">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity opacity-0" id="modal-backdrop" onclick="closeSummary()"></div>
+        
+        <!-- Panel -->
+        <div class="absolute bottom-0 left-0 right-0 bg-dark-card rounded-t-3xl max-h-[90vh] overflow-y-auto transform translate-y-full transition-transform duration-300 ease-out border-t border-dark-border shadow-2xl shadow-black" id="modal-panel">
+            
+            <!-- Handle for dragging feel -->
+            <div class="sticky top-0 bg-dark-card z-10 pt-4 pb-2 flex justify-center" onclick="closeSummary()">
+                <div class="w-12 h-1.5 rounded-full bg-slate-600"></div>
+            </div>
+
+            <div class="p-6 space-y-8 pb-10">
+                <div class="flex justify-between items-start">
+                    <h2 class="text-2xl font-bold text-white">Build Summary</h2>
+                    <button onclick="closeSummary()" class="w-8 h-8 rounded-full bg-dark-input flex items-center justify-center text-slate-400">
+                        <i class="ph-bold ph-x"></i>
+                    </button>
+                </div>
+
+                <!-- Financial Card -->
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 border border-dark-border relative overflow-hidden">
+                    <!-- Decor -->
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                    
+                    <div class="space-y-3 relative z-10">
+                        <div class="flex justify-between text-slate-400 text-sm">
+                            <span>Hardware Cost</span>
+                            <span id="modal-subtotal" class="font-mono text-white">$0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-400">Profit Margin</span>
+                            <div class="flex items-center gap-1 bg-dark-bg rounded-lg border border-dark-border px-2 py-1">
+                                <input type="number" id="profit-margin-input" value="15" class="w-10 bg-transparent text-right outline-none text-brand-500 font-bold" oninput="handleProfitInput(event)">
+                                <span class="text-slate-500">%</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-emerald-500 text-sm">
+                            <span>Profit</span>
+                            <span id="modal-profit" class="font-mono">+$0.00</span>
+                        </div>
+                        <div class="h-px bg-dark-border/50 my-2"></div>
+                        <div class="flex justify-between items-end">
+                            <span class="font-bold text-slate-200">Total</span>
+                            <span id="modal-total" class="font-bold text-3xl text-brand-500 tracking-tight font-mono">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save/Load Actions -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Configuration Management</h3>
+                    
+                    <div class="bg-dark-bg p-1 rounded-xl border border-dark-border flex">
+                        <input type="text" id="build-name" placeholder="Build Name..." class="bg-transparent flex-1 p-3 outline-none text-white placeholder-slate-600">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="handleSave()" class="bg-brand-600 hover:bg-brand-500 text-white p-3.5 rounded-xl font-semibold shadow-lg shadow-brand-500/20 active:scale-95 transition">
+                            Save Build
+                        </button>
+                        <button onclick="handleDelete()" class="bg-dark-input hover:bg-red-500/20 hover:text-red-400 text-slate-300 border border-dark-border hover:border-red-500/50 p-3.5 rounded-xl font-semibold active:scale-95 transition">
+                            Delete
+                        </button>
+                    </div>
+
+                    <p id="save-msg" class="text-center text-xs h-4"></p>
+
+                    <div class="relative">
+                        <select id="saved-builds-select" class="w-full appearance-none bg-dark-input text-white border border-dark-border rounded-xl p-3.5 outline-none focus:border-brand-500 transition" onchange="handleLoad()">
+                            <option value="">Load a saved build...</option>
+                        </select>
+                        <div class="absolute right-4 top-4 text-slate-400 pointer-events-none">
+                            <i class="ph-bold ph-caret-down"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Logic (Preserved from previous version) -->
+    <script>
+        // --- CONFIG ---
+        const CORE_PARTS = [
+            { id: 'cpu', label: 'CPU', icon: 'cpu' },
+            { id: 'motherboard', label: 'Motherboard', icon: 'circuitry' },
+            { id: 'psu', label: 'Power Supply', icon: 'plug' },
+            { id: 'cooler', label: 'Cooler', icon: 'snowflake' },
+            { id: 'case', label: 'Case', icon: 'desktop-tower' },
+            { id: 'os', label: 'OS', icon: 'windows-logo' }
+        ];
+
+        const OPTIONAL_PARTS = [
+            { id: 'rgb', label: 'RGB Control', icon: 'lightbulb' },
+            { id: 'wifi', label: 'WiFi Card', icon: 'wifi-high' }
+        ];
+
+        // --- STATE ---
+        const STORAGE_PREFIX = 'pc_builder_dark_';
+        const initialState = {
+            singleParts: {
+                cpu: { name: '', price: 0 },
+                motherboard: { name: '', price: 0 },
+                psu: { name: '', price: 0 },
+                cooler: { name: '', price: 0 },
+                case: { name: '', price: 0 },
+                os: { name: '', price: 0 },
+                rgb: { name: '', price: 0 },
+                wifi: { name: '', price: 0 }
+            },
+            multiParts: {
+                gpu: [{ name: '', price: 0 }],
+                ram: [{ name: '', price: 0 }],
+                ssd: [{ name: '', price: 0 }],
+                fans: [],
+                cables: [],
+                other: []
+            },
+            profitMargin: 15
+        };
+
+        let state = JSON.parse(JSON.stringify(initialState));
+
+        // --- DOM GENERATION ---
+
+        function renderSingleInputs() {
+            // Render Core
+            const coreContainer = document.getElementById('core-inputs-container');
+            coreContainer.innerHTML = CORE_PARTS.map(part => createSingleInputHTML(part)).join('');
+
+            // Render Optional
+            const optionalContainer = document.getElementById('optional-inputs-container');
+            optionalContainer.innerHTML = OPTIONAL_PARTS.map(part => createSingleInputHTML(part)).join('');
+        }
+
+        function createSingleInputHTML(part) {
+            return `
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-dark-input flex items-center justify-center text-slate-400 flex-shrink-0">
+                        <i class="ph-fill ph-${part.icon}"></i>
+                    </div>
+                    <div class="flex-1 flex bg-dark-bg rounded-xl border border-dark-border focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 transition overflow-hidden">
+                        <input type="text" 
+                            placeholder="${part.label}" 
+                            data-category="single" 
+                            data-part="${part.id}" 
+                            data-field="name" 
+                            class="w-2/3 bg-transparent p-3 text-sm text-white placeholder-slate-600 outline-none"
+                            oninput="handleInput(event)"
+                        >
+                        <div class="w-px bg-dark-border"></div>
+                        <input type="number" 
+                            inputmode="decimal" 
+                            placeholder="0.00" 
+                            data-category="single" 
+                            data-part="${part.id}" 
+                            data-field="price" 
+                            class="w-1/3 bg-transparent p-3 text-sm text-right font-mono text-brand-500 placeholder-slate-700 outline-none"
+                            oninput="handleInput(event)"
+                        >
+                    </div>
+                </div>
+            `;
+        }
+
+        function createMultiItemHTML(category, item, index) {
+            return `
+                <div class="flex gap-2 items-center multi-item animate-fade-in" data-category="${category}" data-index="${index}">
+                    <div class="flex-1 flex bg-dark-bg rounded-xl border border-dark-border focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 transition overflow-hidden">
+                        <input type="text" 
+                            value="${item.name}" 
+                            placeholder="Item Name" 
+                            class="w-2/3 bg-transparent p-3 text-sm text-white placeholder-slate-600 outline-none"
+                            oninput="handleMultiInput(this, 'name')"
+                        >
+                        <div class="w-px bg-dark-border"></div>
+                        <input type="number" 
+                            inputmode="decimal" 
+                            value="${item.price || ''}" 
+                            placeholder="0.00" 
+                            class="w-1/3 bg-transparent p-3 text-sm text-right font-mono text-brand-500 placeholder-slate-700 outline-none"
+                            oninput="handleMultiInput(this, 'price')"
+                        >
+                    </div>
+                    <button onclick="removeMultiItem('${category}', ${index})" class="w-10 h-10 rounded-xl bg-dark-input text-red-400 hover:text-red-300 hover:bg-red-900/20 flex items-center justify-center transition border border-transparent hover:border-red-900/30">
+                        <i class="ph-bold ph-trash"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        // --- RENDER LOGIC ---
+
+        function renderMultiList(category) {
+            const container = document.getElementById(`${category}-list`);
+            const list = state.multiParts[category];
+            
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-[10px] text-slate-600 uppercase tracking-widest text-center py-1">Empty</p>`;
+            } else {
+                container.innerHTML = list.map((item, index) => createMultiItemHTML(category, item, index)).join('');
+            }
+        }
+
+        function populateForm() {
+            // Populate Single Inputs
+            document.querySelectorAll('input[data-category="single"]').forEach(input => {
+                const part = input.dataset.part;
+                const field = input.dataset.field;
+                if (state.singleParts[part]) {
+                    input.value = state.singleParts[part][field] === 0 && field === 'price' ? '' : state.singleParts[part][field];
+                }
+            });
+
+            // Populate Multi Inputs
+            Object.keys(state.multiParts).forEach(cat => renderMultiList(cat));
+
+            // Populate Profit
+            document.getElementById('profit-margin-input').value = state.profitMargin;
+            
+            calculate();
+        }
+
+        // --- CALCULATION LOGIC ---
+
+        function handleInput(e) {
+            const target = e.target;
+            const part = target.dataset.part;
+            const field = target.dataset.field;
+            
+            let val = target.value;
+            if (field === 'price') val = parseFloat(val) || 0;
+            
+            state.singleParts[part][field] = val;
+            calculate();
+        }
+
+        function handleMultiInput(el, field) {
+            const container = el.closest('.multi-item');
+            const category = container.dataset.category;
+            const index = parseInt(container.dataset.index);
+            
+            let val = el.value;
+            if (field === 'price') val = parseFloat(val) || 0;
+
+            state.multiParts[category][index][field] = val;
+            calculate();
+        }
+
+        function addMultiItem(category) {
+            state.multiParts[category].push({ name: '', price: 0 });
+            renderMultiList(category);
+            calculate();
+        }
+
+        function removeMultiItem(category, index) {
+            state.multiParts[category].splice(index, 1);
+            renderMultiList(category);
+            calculate();
+        }
+
+        function handleProfitInput(e) {
+            state.profitMargin = parseFloat(e.target.value) || 0;
+            calculate();
+        }
+
+        function calculate() {
+            let subtotal = 0;
+            
+            // Single
+            Object.values(state.singleParts).forEach(p => subtotal += p.price);
+            // Multi
+            Object.values(state.multiParts).forEach(list => list.forEach(i => subtotal += i.price));
+
+            const profit = subtotal * (state.profitMargin / 100);
+            const total = subtotal + profit;
+
+            const fmt = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+            // Update UI
+            document.getElementById('bar-total').textContent = fmt(total);
+            document.getElementById('modal-subtotal').textContent = fmt(subtotal);
+            document.getElementById('modal-profit').textContent = `+${fmt(profit)}`;
+            document.getElementById('modal-total').textContent = fmt(total);
+        }
+
+        // --- UI INTERACTION ---
+
+        function toggleAccordion(id) {
+            const content = document.getElementById(id);
+            const btn = content.previousElementSibling;
+            const isOpen = content.classList.contains('open');
+
+            if (isOpen) {
+                content.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+            } else {
+                content.classList.add('open');
+                btn.setAttribute('aria-expanded', 'true');
+            }
+        }
+
+        function openSummary() {
+            const modal = document.getElementById('summary-modal');
+            const backdrop = document.getElementById('modal-backdrop');
+            const panel = document.getElementById('modal-panel');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                panel.classList.remove('translate-y-full');
+            }, 10);
+            
+            populateLoadSelect(); 
+        }
+
+        function closeSummary() {
+            const modal = document.getElementById('summary-modal');
+            const backdrop = document.getElementById('modal-backdrop');
+            const panel = document.getElementById('modal-panel');
+            
+            backdrop.classList.add('opacity-0');
+            panel.classList.add('translate-y-full');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // --- STORAGE ---
+
+        function showMsg(txt, isErr) {
+            const el = document.getElementById('save-msg');
+            el.textContent = txt;
+            el.className = `text-center text-xs h-4 ${isErr ? 'text-red-400' : 'text-emerald-400'}`;
+            setTimeout(() => el.textContent = '', 3000);
+        }
+
+        function populateLoadSelect() {
+            const sel = document.getElementById('saved-builds-select');
+            sel.innerHTML = '<option value="">Load a saved build...</option>';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith(STORAGE_PREFIX)) {
+                    const name = key.replace(STORAGE_PREFIX, '');
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    sel.appendChild(opt);
+                }
+            }
+        }
+
+        function handleSave() {
+            const name = document.getElementById('build-name').value.trim();
+            if (!name) return showMsg('Please enter a name', true);
+            
+            try {
+                localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(state));
+                populateLoadSelect();
+                showMsg('Build saved successfully!', false);
+            } catch(e) {
+                showMsg('Storage full!', true);
+            }
+        }
+
+        function handleLoad() {
+            const name = document.getElementById('saved-builds-select').value;
+            const nameInput = document.getElementById('build-name');
+            if (!name) return;
+
+            const data = localStorage.getItem(STORAGE_PREFIX + name);
+            if (data) {
+                state = JSON.parse(data);
+                // Merge simply to ensure structure
+                state = { ...initialState, ...state };
+                
+                nameInput.value = name;
+                populateForm();
+                // closeSummary(); // Optional: close modal on load
+                showMsg('Loaded!', false);
+            }
+        }
+
+        function handleDelete() {
+            const name = document.getElementById('build-name').value.trim();
+            if (!name) return showMsg('Enter name to delete', true);
+            if (localStorage.getItem(STORAGE_PREFIX + name)) {
+                localStorage.removeItem(STORAGE_PREFIX + name);
+                populateLoadSelect();
+                document.getElementById('build-name').value = '';
+                showMsg('Deleted', false);
+            } else {
+                showMsg('Not found', true);
+            }
+        }
+
+        // --- INIT ---
+        document.getElementById('reset-app-btn').addEventListener('click', () => {
+            if(confirm('Clear all fields?')) {
+                state = JSON.parse(JSON.stringify(initialState));
+                populateForm();
+            }
+        });
+
+        // Initialize
+        renderSingleInputs();
+        populateForm();
+
+    </script>
 </body>
 </html>
-
-
+```

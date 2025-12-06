@@ -277,24 +277,39 @@
                     <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
                     
                     <div class="space-y-3 relative z-10">
+                        <!-- Base Cost (No Profit) -->
                         <div class="flex justify-between text-slate-400 text-sm">
-                            <span>Hardware Cost</span>
+                            <span>Base Cost (Parts Only)</span>
                             <span id="modal-subtotal" class="font-mono text-white">$0.00</span>
                         </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-slate-400">Profit Margin</span>
-                            <div class="flex items-center gap-1 bg-dark-bg rounded-lg border border-dark-border px-2 py-1">
-                                <input type="number" id="profit-margin-input" value="15" class="w-10 bg-transparent text-right outline-none text-brand-500 font-bold" oninput="handleProfitInput(event)">
-                                <span class="text-slate-500">%</span>
+
+                        <!-- Profit Controls -->
+                        <div class="flex justify-between items-center text-sm py-2">
+                            <span class="text-slate-400">Profit</span>
+                            <div class="flex items-center gap-2">
+                                <!-- Mode Toggle -->
+                                <div class="flex bg-dark-bg rounded-lg border border-dark-border p-1">
+                                    <button id="profit-mode-percent" class="px-3 py-1 rounded-md text-xs font-bold transition bg-brand-600 text-white shadow-sm" onclick="setProfitMode('percent')">%</button>
+                                    <button id="profit-mode-fixed" class="px-3 py-1 rounded-md text-xs font-bold transition text-slate-400 hover:text-white" onclick="setProfitMode('fixed')">$</button>
+                                </div>
+                                <!-- Input -->
+                                <div class="flex items-center gap-1 bg-dark-bg rounded-lg border border-dark-border px-3 py-1 w-24">
+                                    <input type="number" id="profit-input" value="15" class="w-full bg-transparent text-right outline-none text-brand-500 font-bold" oninput="handleProfitInput(event)">
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Calculated Profit Display -->
                         <div class="flex justify-between text-emerald-500 text-sm">
-                            <span>Profit</span>
-                            <span id="modal-profit" class="font-mono">+$0.00</span>
+                            <span>Calculated Profit</span>
+                            <span id="modal-profit" class="font-mono font-medium">+$0.00</span>
                         </div>
+
                         <div class="h-px bg-dark-border/50 my-2"></div>
+                        
+                        <!-- Final Total -->
                         <div class="flex justify-between items-end">
-                            <span class="font-bold text-slate-200">Total</span>
+                            <span class="font-bold text-slate-200">Grand Total</span>
                             <span id="modal-total" class="font-bold text-3xl text-brand-500 tracking-tight font-mono">$0.00</span>
                         </div>
                     </div>
@@ -341,8 +356,6 @@
     <!-- JS Logic -->
     <script>
         // --- EMBEDDED CSV DATA ---
-        // Easy to edit: Add new lines in Format: Type,Name,Price
-        // Types: CPU, GPU, RAM, SSD
         const HARDWARE_DATA_CSV = `
 Type,Name,Price
 CPU,AMD Ryzen 9 9950X,649
@@ -477,7 +490,8 @@ SSD,8TB NVMe M.2 SSD,850
                 cables: [],
                 other: []
             },
-            profitMargin: 15
+            profitMode: 'percent', // 'percent' or 'fixed'
+            profitValue: 15        // Default 15%
         };
 
         let state = JSON.parse(JSON.stringify(initialState));
@@ -485,10 +499,7 @@ SSD,8TB NVMe M.2 SSD,850
         // --- DOM GENERATION ---
 
         function initDatalists() {
-            // First, parse the CSV data
             parseHardwareData();
-
-            // Helper to populate a list
             const fillList = (id, db) => {
                 const list = document.getElementById(id);
                 list.innerHTML = '';
@@ -498,7 +509,6 @@ SSD,8TB NVMe M.2 SSD,850
                     list.appendChild(opt);
                 });
             };
-
             fillList('cpu-options', cpuDatabase);
             fillList('gpu-options', gpuDatabase);
             fillList('ram-options', ramDatabase);
@@ -506,11 +516,8 @@ SSD,8TB NVMe M.2 SSD,850
         }
 
         function renderSingleInputs() {
-            // Render Core
             const coreContainer = document.getElementById('core-inputs-container');
             coreContainer.innerHTML = CORE_PARTS.map(part => createSingleInputHTML(part)).join('');
-
-            // Render Optional
             const optionalContainer = document.getElementById('optional-inputs-container');
             optionalContainer.innerHTML = OPTIONAL_PARTS.map(part => createSingleInputHTML(part)).join('');
         }
@@ -529,7 +536,7 @@ SSD,8TB NVMe M.2 SSD,850
                             data-part="${part.id}" 
                             data-field="name" 
                             ${listAttribute}
-                            class="w-2/3 bg-transparent p-3 text-sm text-white placeholder-slate-600 outline-none"
+                            class="w-full bg-transparent p-3 text-sm text-white placeholder-slate-600 outline-none"
                             oninput="handleInput(event)"
                             onchange="checkAutoFill(event)"
                         >
@@ -543,13 +550,16 @@ SSD,8TB NVMe M.2 SSD,850
                             class="w-1/3 bg-transparent p-3 text-sm text-right font-mono text-brand-500 placeholder-slate-700 outline-none"
                             oninput="handleInput(event)"
                         >
+                        <div class="w-px bg-dark-border"></div>
+                        <button onclick="openSearch(this)" class="px-3 bg-dark-input hover:bg-slate-600 text-slate-400 hover:text-white transition flex items-center justify-center" title="Search Online">
+                            <i class="ph-bold ph-magnifying-glass"></i>
+                        </button>
                     </div>
                 </div>
             `;
         }
 
         function createMultiItemHTML(category, item, index) {
-            // Conditional datalist logic
             let listAttribute = '';
             if (category === 'gpu') listAttribute = 'list="gpu-options"';
             else if (category === 'ram') listAttribute = 'list="ram-options"';
@@ -562,7 +572,7 @@ SSD,8TB NVMe M.2 SSD,850
                             value="${item.name}" 
                             placeholder="Item Name" 
                             ${listAttribute}
-                            class="w-2/3 bg-transparent p-3 text-sm text-white placeholder-slate-600 outline-none"
+                            class="w-full bg-transparent p-3 text-sm text-white placeholder-slate-600 outline-none"
                             oninput="handleMultiInput(this, 'name')"
                             onchange="handleMultiInput(this, 'name')" 
                         >
@@ -574,6 +584,10 @@ SSD,8TB NVMe M.2 SSD,850
                             class="w-1/3 bg-transparent p-3 text-sm text-right font-mono text-brand-500 placeholder-slate-700 outline-none"
                             oninput="handleMultiInput(this, 'price')"
                         >
+                        <div class="w-px bg-dark-border"></div>
+                        <button onclick="openSearch(this)" class="px-3 bg-dark-input hover:bg-slate-600 text-slate-400 hover:text-white transition flex items-center justify-center" title="Search Online">
+                            <i class="ph-bold ph-magnifying-glass"></i>
+                        </button>
                     </div>
                     <button onclick="removeMultiItem('${category}', ${index})" class="w-10 h-10 rounded-xl bg-dark-input text-red-400 hover:text-red-300 hover:bg-red-900/20 flex items-center justify-center transition border border-transparent hover:border-red-900/30">
                         <i class="ph-bold ph-trash"></i>
@@ -582,13 +596,24 @@ SSD,8TB NVMe M.2 SSD,850
             `;
         }
 
-        // --- AUTO-FILL LOGIC ---
+        // --- SEARCH LOGIC ---
+        function openSearch(btn) {
+            const container = btn.closest('.flex-1');
+            const input = container.querySelector('input[type="text"]');
+            const query = input.value.trim();
+            if (query) {
+                const url = `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}`;
+                window.open(url, '_blank');
+            } else {
+                alert("Please enter a part name first.");
+            }
+        }
 
+        // --- AUTO-FILL LOGIC ---
         function checkAutoFill(e) {
             const input = e.target;
             const part = input.dataset.part;
             const val = input.value;
-
             if (part === 'cpu' && cpuDatabase[val]) {
                 const price = cpuDatabase[val];
                 const priceInput = input.parentElement.querySelector('input[type="number"]');
@@ -600,12 +625,34 @@ SSD,8TB NVMe M.2 SSD,850
             }
         }
 
-        // --- RENDER LOGIC ---
+        // --- PROFIT LOGIC ---
+        function setProfitMode(mode) {
+            state.profitMode = mode;
+            updateProfitUI();
+            calculate();
+        }
 
+        function updateProfitUI() {
+            const btnPercent = document.getElementById('profit-mode-percent');
+            const btnFixed = document.getElementById('profit-mode-fixed');
+            
+            // Reset styles
+            const activeClass = "bg-brand-600 text-white shadow-sm";
+            const inactiveClass = "text-slate-400 hover:text-white";
+            
+            btnPercent.className = `px-3 py-1 rounded-md text-xs font-bold transition ${state.profitMode === 'percent' ? activeClass : inactiveClass}`;
+            btnFixed.className = `px-3 py-1 rounded-md text-xs font-bold transition ${state.profitMode === 'fixed' ? activeClass : inactiveClass}`;
+        }
+
+        function handleProfitInput(e) {
+            state.profitValue = parseFloat(e.target.value) || 0;
+            calculate();
+        }
+
+        // --- RENDER LOGIC ---
         function renderMultiList(category) {
             const container = document.getElementById(`${category}-list`);
             const list = state.multiParts[category];
-            
             if (list.length === 0) {
                 container.innerHTML = `<p class="text-[10px] text-slate-600 uppercase tracking-widest text-center py-1">Empty</p>`;
             } else {
@@ -614,7 +661,6 @@ SSD,8TB NVMe M.2 SSD,850
         }
 
         function populateForm() {
-            // Populate Single Inputs
             document.querySelectorAll('input[data-category="single"]').forEach(input => {
                 const part = input.dataset.part;
                 const field = input.dataset.field;
@@ -622,26 +668,22 @@ SSD,8TB NVMe M.2 SSD,850
                     input.value = state.singleParts[part][field] === 0 && field === 'price' ? '' : state.singleParts[part][field];
                 }
             });
-
-            // Populate Multi Inputs
             Object.keys(state.multiParts).forEach(cat => renderMultiList(cat));
-
-            // Populate Profit
-            document.getElementById('profit-margin-input').value = state.profitMargin;
+            
+            // Profit
+            document.getElementById('profit-input').value = state.profitValue;
+            updateProfitUI();
             
             calculate();
         }
 
         // --- CALCULATION LOGIC ---
-
         function handleInput(e) {
             const target = e.target;
             const part = target.dataset.part;
             const field = target.dataset.field;
-            
             let val = target.value;
             if (field === 'price') val = parseFloat(val) || 0;
-            
             state.singleParts[part][field] = val;
             calculate();
         }
@@ -652,29 +694,24 @@ SSD,8TB NVMe M.2 SSD,850
             const index = parseInt(container.dataset.index);
             const val = el.value;
             
-            // 1. Update State
             if (field === 'price') {
                 state.multiParts[category][index][field] = parseFloat(val) || 0;
             } else {
                 state.multiParts[category][index][field] = val;
             }
 
-            // 2. Auto-Price Logic for GPU, RAM, SSD
             let autoPrice = 0;
             if (category === 'gpu' && gpuDatabase[val]) autoPrice = gpuDatabase[val];
             else if (category === 'ram' && ramDatabase[val]) autoPrice = ramDatabase[val];
             else if (category === 'ssd' && ssdDatabase[val]) autoPrice = ssdDatabase[val];
 
             if (autoPrice > 0 && field === 'name') {
-                // Update State
                 state.multiParts[category][index].price = autoPrice;
-                // Update DOM Element immediately
                 const priceInput = container.querySelector('input[type="number"]');
                 if (priceInput && priceInput.value != autoPrice) {
                     priceInput.value = autoPrice;
                 }
             }
-
             calculate();
         }
 
@@ -690,25 +727,21 @@ SSD,8TB NVMe M.2 SSD,850
             calculate();
         }
 
-        function handleProfitInput(e) {
-            state.profitMargin = parseFloat(e.target.value) || 0;
-            calculate();
-        }
-
         function calculate() {
             let subtotal = 0;
-            
-            // Single
             Object.values(state.singleParts).forEach(p => subtotal += p.price);
-            // Multi
             Object.values(state.multiParts).forEach(list => list.forEach(i => subtotal += i.price));
 
-            const profit = subtotal * (state.profitMargin / 100);
-            const total = subtotal + profit;
+            let profit = 0;
+            if (state.profitMode === 'percent') {
+                profit = subtotal * (state.profitValue / 100);
+            } else {
+                profit = state.profitValue;
+            }
 
+            const total = subtotal + profit;
             const fmt = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
-            // Update UI
             document.getElementById('bar-total').textContent = fmt(total);
             document.getElementById('modal-subtotal').textContent = fmt(subtotal);
             document.getElementById('modal-profit').textContent = `+${fmt(profit)}`;
@@ -716,12 +749,10 @@ SSD,8TB NVMe M.2 SSD,850
         }
 
         // --- UI INTERACTION ---
-
         function toggleAccordion(id) {
             const content = document.getElementById(id);
             const btn = content.previousElementSibling;
             const isOpen = content.classList.contains('open');
-
             if (isOpen) {
                 content.classList.remove('open');
                 btn.setAttribute('aria-expanded', 'false');
@@ -735,13 +766,11 @@ SSD,8TB NVMe M.2 SSD,850
             const modal = document.getElementById('summary-modal');
             const backdrop = document.getElementById('modal-backdrop');
             const panel = document.getElementById('modal-panel');
-            
             modal.classList.remove('hidden');
             setTimeout(() => {
                 backdrop.classList.remove('opacity-0');
                 panel.classList.remove('translate-y-full');
             }, 10);
-            
             populateLoadSelect(); 
         }
 
@@ -749,17 +778,14 @@ SSD,8TB NVMe M.2 SSD,850
             const modal = document.getElementById('summary-modal');
             const backdrop = document.getElementById('modal-backdrop');
             const panel = document.getElementById('modal-panel');
-            
             backdrop.classList.add('opacity-0');
             panel.classList.add('translate-y-full');
-            
             setTimeout(() => {
                 modal.classList.add('hidden');
             }, 300);
         }
 
         // --- STORAGE ---
-
         function showMsg(txt, isErr) {
             const el = document.getElementById('save-msg');
             el.textContent = txt;
@@ -785,7 +811,6 @@ SSD,8TB NVMe M.2 SSD,850
         function handleSave() {
             const name = document.getElementById('build-name').value.trim();
             if (!name) return showMsg('Please enter a name', true);
-            
             try {
                 localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(state));
                 populateLoadSelect();
@@ -799,16 +824,16 @@ SSD,8TB NVMe M.2 SSD,850
             const name = document.getElementById('saved-builds-select').value;
             const nameInput = document.getElementById('build-name');
             if (!name) return;
-
             const data = localStorage.getItem(STORAGE_PREFIX + name);
             if (data) {
                 state = JSON.parse(data);
-                // Merge simply to ensure structure
+                // Ensure state structure compatibility
                 state = { ...initialState, ...state };
+                state.singleParts = { ...initialState.singleParts, ...state.singleParts };
+                state.multiParts = { ...initialState.multiParts, ...state.multiParts };
                 
                 nameInput.value = name;
                 populateForm();
-                // closeSummary(); // Optional: close modal on load
                 showMsg('Loaded!', false);
             }
         }
@@ -834,7 +859,6 @@ SSD,8TB NVMe M.2 SSD,850
             }
         });
 
-        // Initialize
         initDatalists();
         renderSingleInputs();
         populateForm();

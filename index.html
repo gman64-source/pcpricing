@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0f172a">
-    <title>PC Configurator</title>
+    <title>PC Configurator Ultimate</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Phosphor Icons -->
@@ -332,11 +332,70 @@
         </div>
     </div>
 
-    <!-- JS Logic (Preserved from previous version) -->
+    <!-- DATALISTS FOR AUTOCOMPLETE -->
+    <datalist id="cpu-options"></datalist>
+    <datalist id="gpu-options"></datalist>
+    <datalist id="ram-options"></datalist>
+    <datalist id="ssd-options"></datalist>
+
+    <!-- JS Logic -->
     <script>
+        // --- HARDWARE DATABASES ---
+        const cpuDatabase = {
+            "AMD Ryzen 9 9950X": 649, "AMD Ryzen 9 9900X": 499,
+            "AMD Ryzen 7 9700X": 359, "AMD Ryzen 5 9600X": 279,
+            "AMD Ryzen 7 9800X3D": 479,
+            "AMD Ryzen 9 7950X3D": 599, "AMD Ryzen 9 7950X": 549,
+            "AMD Ryzen 9 7900X3D": 449, "AMD Ryzen 9 7900X": 399,
+            "AMD Ryzen 7 7800X3D": 369, "AMD Ryzen 7 7700X": 299,
+            "AMD Ryzen 5 7600X": 229, "AMD Ryzen 5 7600": 199,
+            "Intel Core Ultra 9 285K": 589, "Intel Core Ultra 7 265K": 394,
+            "Intel Core Ultra 5 245K": 309,
+            "Intel Core i9-14900K": 549, "Intel Core i7-14700K": 399,
+            "Intel Core i5-14600K": 299
+        };
+
+        const gpuDatabase = {
+            "Nvidia GeForce RTX 5090": 1999, "Nvidia GeForce RTX 5080": 999,
+            "Nvidia GeForce RTX 5070 Ti": 749, "Nvidia GeForce RTX 5070": 549,
+            "Nvidia GeForce RTX 5060 Ti": 429, "Nvidia GeForce RTX 5060": 299,
+            "Nvidia GeForce RTX 5050": 249,
+            "Nvidia GeForce RTX 4090": 1599, "Nvidia GeForce RTX 4080 Super": 999,
+            "Nvidia GeForce RTX 4080": 1199, "Nvidia GeForce RTX 4070 Ti Super": 799,
+            "Nvidia GeForce RTX 4070 Super": 599, "Nvidia GeForce RTX 4070": 549,
+            "Nvidia GeForce RTX 4060 Ti": 399, "Nvidia GeForce RTX 4060": 299,
+            "AMD Radeon RX 9070 XT": 629, "AMD Radeon RX 9070": 549,
+            "AMD Radeon RX 9060 XT": 349,
+            "AMD Radeon RX 7900 XTX": 899, "AMD Radeon RX 7900 XT": 699,
+            "AMD Radeon RX 7900 GRE": 549, "AMD Radeon RX 7800 XT": 499,
+            "AMD Radeon RX 7700 XT": 449, "AMD Radeon RX 7600 XT": 329,
+            "AMD Radeon RX 7600": 269,
+            "Intel Arc B580": 249, "Intel Arc B570": 229, "Intel Arc A770": 299
+        };
+
+        const ramDatabase = {
+            "DDR4 16GB (2x8GB) 3200MHz": 35,
+            "DDR4 32GB (2x16GB) 3200MHz": 60,
+            "DDR4 64GB (2x32GB) 3200MHz": 110,
+            "DDR4 128GB (4x32GB) 3200MHz": 250,
+            "DDR5 16GB (2x8GB) 5600MHz": 55,
+            "DDR5 32GB (2x16GB) 6000MHz": 95,
+            "DDR5 64GB (2x32GB) 6000MHz": 185,
+            "DDR5 128GB (4x32GB) 5600MHz": 450
+        };
+
+        const ssdDatabase = {
+            "256GB NVMe M.2 SSD": 29,
+            "512GB NVMe M.2 SSD": 45,
+            "1TB NVMe M.2 SSD": 75,
+            "2TB NVMe M.2 SSD": 135,
+            "4TB NVMe M.2 SSD": 280,
+            "8TB NVMe M.2 SSD": 850
+        };
+
         // --- CONFIG ---
         const CORE_PARTS = [
-            { id: 'cpu', label: 'CPU', icon: 'cpu' },
+            { id: 'cpu', label: 'CPU', icon: 'cpu', listId: 'cpu-options' },
             { id: 'motherboard', label: 'Motherboard', icon: 'circuitry' },
             { id: 'psu', label: 'Power Supply', icon: 'plug' },
             { id: 'cooler', label: 'Cooler', icon: 'snowflake' },
@@ -377,6 +436,24 @@
 
         // --- DOM GENERATION ---
 
+        function initDatalists() {
+            // Helper to populate a list
+            const fillList = (id, db) => {
+                const list = document.getElementById(id);
+                list.innerHTML = '';
+                Object.keys(db).forEach(key => {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    list.appendChild(opt);
+                });
+            };
+
+            fillList('cpu-options', cpuDatabase);
+            fillList('gpu-options', gpuDatabase);
+            fillList('ram-options', ramDatabase);
+            fillList('ssd-options', ssdDatabase);
+        }
+
         function renderSingleInputs() {
             // Render Core
             const coreContainer = document.getElementById('core-inputs-container');
@@ -388,6 +465,7 @@
         }
 
         function createSingleInputHTML(part) {
+            const listAttribute = part.listId ? `list="${part.listId}"` : '';
             return `
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-dark-input flex items-center justify-center text-slate-400 flex-shrink-0">
@@ -399,8 +477,10 @@
                             data-category="single" 
                             data-part="${part.id}" 
                             data-field="name" 
+                            ${listAttribute}
                             class="w-2/3 bg-transparent p-3 text-sm text-white placeholder-slate-600 outline-none"
                             oninput="handleInput(event)"
+                            onchange="checkAutoFill(event)"
                         >
                         <div class="w-px bg-dark-border"></div>
                         <input type="number" 
@@ -418,14 +498,22 @@
         }
 
         function createMultiItemHTML(category, item, index) {
+            // Conditional datalist logic
+            let listAttribute = '';
+            if (category === 'gpu') listAttribute = 'list="gpu-options"';
+            else if (category === 'ram') listAttribute = 'list="ram-options"';
+            else if (category === 'ssd') listAttribute = 'list="ssd-options"';
+            
             return `
                 <div class="flex gap-2 items-center multi-item animate-fade-in" data-category="${category}" data-index="${index}">
                     <div class="flex-1 flex bg-dark-bg rounded-xl border border-dark-border focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 transition overflow-hidden">
                         <input type="text" 
                             value="${item.name}" 
                             placeholder="Item Name" 
+                            ${listAttribute}
                             class="w-2/3 bg-transparent p-3 text-sm text-white placeholder-slate-600 outline-none"
                             oninput="handleMultiInput(this, 'name')"
+                            onchange="handleMultiInput(this, 'name')" 
                         >
                         <div class="w-px bg-dark-border"></div>
                         <input type="number" 
@@ -441,6 +529,24 @@
                     </button>
                 </div>
             `;
+        }
+
+        // --- AUTO-FILL LOGIC ---
+
+        function checkAutoFill(e) {
+            const input = e.target;
+            const part = input.dataset.part;
+            const val = input.value;
+
+            if (part === 'cpu' && cpuDatabase[val]) {
+                const price = cpuDatabase[val];
+                const priceInput = input.parentElement.querySelector('input[type="number"]');
+                if (priceInput) {
+                    priceInput.value = price;
+                    const event = new Event('input', { bubbles: true });
+                    priceInput.dispatchEvent(event);
+                }
+            }
         }
 
         // --- RENDER LOGIC ---
@@ -493,11 +599,31 @@
             const container = el.closest('.multi-item');
             const category = container.dataset.category;
             const index = parseInt(container.dataset.index);
+            const val = el.value;
             
-            let val = el.value;
-            if (field === 'price') val = parseFloat(val) || 0;
+            // 1. Update State
+            if (field === 'price') {
+                state.multiParts[category][index][field] = parseFloat(val) || 0;
+            } else {
+                state.multiParts[category][index][field] = val;
+            }
 
-            state.multiParts[category][index][field] = val;
+            // 2. Auto-Price Logic for GPU, RAM, SSD
+            let autoPrice = 0;
+            if (category === 'gpu' && gpuDatabase[val]) autoPrice = gpuDatabase[val];
+            else if (category === 'ram' && ramDatabase[val]) autoPrice = ramDatabase[val];
+            else if (category === 'ssd' && ssdDatabase[val]) autoPrice = ssdDatabase[val];
+
+            if (autoPrice > 0 && field === 'name') {
+                // Update State
+                state.multiParts[category][index].price = autoPrice;
+                // Update DOM Element immediately
+                const priceInput = container.querySelector('input[type="number"]');
+                if (priceInput && priceInput.value != autoPrice) {
+                    priceInput.value = autoPrice;
+                }
+            }
+
             calculate();
         }
 
@@ -658,10 +784,10 @@
         });
 
         // Initialize
+        initDatalists();
         renderSingleInputs();
         populateForm();
 
     </script>
 </body>
 </html>
-```

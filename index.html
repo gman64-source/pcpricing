@@ -340,58 +340,106 @@
 
     <!-- JS Logic -->
     <script>
-        // --- HARDWARE DATABASES ---
-        const cpuDatabase = {
-            "AMD Ryzen 9 9950X": 649, "AMD Ryzen 9 9900X": 499,
-            "AMD Ryzen 7 9700X": 359, "AMD Ryzen 5 9600X": 279,
-            "AMD Ryzen 7 9800X3D": 479,
-            "AMD Ryzen 9 7950X3D": 599, "AMD Ryzen 9 7950X": 549,
-            "AMD Ryzen 9 7900X3D": 449, "AMD Ryzen 9 7900X": 399,
-            "AMD Ryzen 7 7800X3D": 369, "AMD Ryzen 7 7700X": 299,
-            "AMD Ryzen 5 7600X": 229, "AMD Ryzen 5 7600": 199,
-            "Intel Core Ultra 9 285K": 589, "Intel Core Ultra 7 265K": 394,
-            "Intel Core Ultra 5 245K": 309,
-            "Intel Core i9-14900K": 549, "Intel Core i7-14700K": 399,
-            "Intel Core i5-14600K": 299
-        };
+        // --- EMBEDDED CSV DATA ---
+        // Easy to edit: Add new lines in Format: Type,Name,Price
+        // Types: CPU, GPU, RAM, SSD
+        const HARDWARE_DATA_CSV = `
+Type,Name,Price
+CPU,AMD Ryzen 9 9950X,649
+CPU,AMD Ryzen 9 9900X,499
+CPU,AMD Ryzen 7 9700X,359
+CPU,AMD Ryzen 5 9600X,279
+CPU,AMD Ryzen 7 9800X3D,479
+CPU,AMD Ryzen 9 7950X3D,599
+CPU,AMD Ryzen 9 7950X,549
+CPU,AMD Ryzen 9 7900X3D,449
+CPU,AMD Ryzen 9 7900X,399
+CPU,AMD Ryzen 7 7800X3D,369
+CPU,AMD Ryzen 7 7700X,299
+CPU,AMD Ryzen 5 7600X,229
+CPU,AMD Ryzen 5 7600,199
+CPU,Intel Core Ultra 9 285K,589
+CPU,Intel Core Ultra 7 265K,394
+CPU,Intel Core Ultra 5 245K,309
+CPU,Intel Core i9-14900K,549
+CPU,Intel Core i7-14700K,399
+CPU,Intel Core i5-14600K,299
+CPU,Intel Core i9-13900K,499
+CPU,Intel Core i7-13700K,359
+CPU,Intel Core i5-13600K,269
 
-        const gpuDatabase = {
-            "Nvidia GeForce RTX 5090": 1999, "Nvidia GeForce RTX 5080": 999,
-            "Nvidia GeForce RTX 5070 Ti": 749, "Nvidia GeForce RTX 5070": 549,
-            "Nvidia GeForce RTX 5060 Ti": 429, "Nvidia GeForce RTX 5060": 299,
-            "Nvidia GeForce RTX 5050": 249,
-            "Nvidia GeForce RTX 4090": 1599, "Nvidia GeForce RTX 4080 Super": 999,
-            "Nvidia GeForce RTX 4080": 1199, "Nvidia GeForce RTX 4070 Ti Super": 799,
-            "Nvidia GeForce RTX 4070 Super": 599, "Nvidia GeForce RTX 4070": 549,
-            "Nvidia GeForce RTX 4060 Ti": 399, "Nvidia GeForce RTX 4060": 299,
-            "AMD Radeon RX 9070 XT": 629, "AMD Radeon RX 9070": 549,
-            "AMD Radeon RX 9060 XT": 349,
-            "AMD Radeon RX 7900 XTX": 899, "AMD Radeon RX 7900 XT": 699,
-            "AMD Radeon RX 7900 GRE": 549, "AMD Radeon RX 7800 XT": 499,
-            "AMD Radeon RX 7700 XT": 449, "AMD Radeon RX 7600 XT": 329,
-            "AMD Radeon RX 7600": 269,
-            "Intel Arc B580": 249, "Intel Arc B570": 229, "Intel Arc A770": 299
-        };
+GPU,Nvidia GeForce RTX 5090,1999
+GPU,Nvidia GeForce RTX 5080,999
+GPU,Nvidia GeForce RTX 5070 Ti,749
+GPU,Nvidia GeForce RTX 5070,549
+GPU,Nvidia GeForce RTX 5060 Ti,429
+GPU,Nvidia GeForce RTX 5060,299
+GPU,Nvidia GeForce RTX 5050,249
+GPU,Nvidia GeForce RTX 4090,1599
+GPU,Nvidia GeForce RTX 4080 Super,999
+GPU,Nvidia GeForce RTX 4080,1199
+GPU,Nvidia GeForce RTX 4070 Ti Super,799
+GPU,Nvidia GeForce RTX 4070 Super,599
+GPU,Nvidia GeForce RTX 4070,549
+GPU,Nvidia GeForce RTX 4060 Ti,399
+GPU,Nvidia GeForce RTX 4060,299
+GPU,AMD Radeon RX 9070 XT,629
+GPU,AMD Radeon RX 9070,549
+GPU,AMD Radeon RX 9060 XT,349
+GPU,AMD Radeon RX 7900 XTX,899
+GPU,AMD Radeon RX 7900 XT,699
+GPU,AMD Radeon RX 7900 GRE,549
+GPU,AMD Radeon RX 7800 XT,499
+GPU,AMD Radeon RX 7700 XT,449
+GPU,AMD Radeon RX 7600 XT,329
+GPU,AMD Radeon RX 7600,269
+GPU,Intel Arc B580,249
+GPU,Intel Arc B570,229
+GPU,Intel Arc A770,299
 
-        const ramDatabase = {
-            "DDR4 16GB (2x8GB) 3200MHz": 35,
-            "DDR4 32GB (2x16GB) 3200MHz": 60,
-            "DDR4 64GB (2x32GB) 3200MHz": 110,
-            "DDR4 128GB (4x32GB) 3200MHz": 250,
-            "DDR5 16GB (2x8GB) 5600MHz": 55,
-            "DDR5 32GB (2x16GB) 6000MHz": 95,
-            "DDR5 64GB (2x32GB) 6000MHz": 185,
-            "DDR5 128GB (4x32GB) 5600MHz": 450
-        };
+RAM,DDR4 16GB (2x8GB) 3200MHz,35
+RAM,DDR4 32GB (2x16GB) 3200MHz,60
+RAM,DDR4 64GB (2x32GB) 3200MHz,110
+RAM,DDR4 128GB (4x32GB) 3200MHz,250
+RAM,DDR5 16GB (2x8GB) 5600MHz,55
+RAM,DDR5 32GB (2x16GB) 6000MHz,95
+RAM,DDR5 64GB (2x32GB) 6000MHz,185
+RAM,DDR5 128GB (4x32GB) 5600MHz,450
 
-        const ssdDatabase = {
-            "256GB NVMe M.2 SSD": 29,
-            "512GB NVMe M.2 SSD": 45,
-            "1TB NVMe M.2 SSD": 75,
-            "2TB NVMe M.2 SSD": 135,
-            "4TB NVMe M.2 SSD": 280,
-            "8TB NVMe M.2 SSD": 850
-        };
+SSD,256GB NVMe M.2 SSD,29
+SSD,512GB NVMe M.2 SSD,45
+SSD,1TB NVMe M.2 SSD,75
+SSD,2TB NVMe M.2 SSD,135
+SSD,4TB NVMe M.2 SSD,280
+SSD,8TB NVMe M.2 SSD,850
+`;
+
+        // Database Objects (Populated by CSV Parser)
+        const cpuDatabase = {};
+        const gpuDatabase = {};
+        const ramDatabase = {};
+        const ssdDatabase = {};
+
+        // --- CSV PARSER ---
+        function parseHardwareData() {
+            const lines = HARDWARE_DATA_CSV.trim().split('\n');
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line || line.startsWith('Type')) return; // Skip empty or header
+
+                const parts = line.split(',');
+                if (parts.length >= 3) {
+                    const type = parts[0].trim().toUpperCase();
+                    const name = parts[1].trim();
+                    const price = parseFloat(parts[2].trim());
+
+                    if (type === 'CPU') cpuDatabase[name] = price;
+                    else if (type === 'GPU') gpuDatabase[name] = price;
+                    else if (type === 'RAM') ramDatabase[name] = price;
+                    else if (type === 'SSD') ssdDatabase[name] = price;
+                }
+            });
+        }
 
         // --- CONFIG ---
         const CORE_PARTS = [
@@ -437,6 +485,9 @@
         // --- DOM GENERATION ---
 
         function initDatalists() {
+            // First, parse the CSV data
+            parseHardwareData();
+
             // Helper to populate a list
             const fillList = (id, db) => {
                 const list = document.getElementById(id);
